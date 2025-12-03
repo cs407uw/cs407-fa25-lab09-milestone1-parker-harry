@@ -23,49 +23,59 @@ class BallViewModel : ViewModel() {
      */
     fun initBall(fieldWidth: Float, fieldHeight: Float, ballSizePx: Float) {
         if (ball == null) {
-            // TODO: Initialize the ball instance
-            // ball = Ball(...)
+            // Initialize the ball instance
+            ball = Ball(fieldWidth, fieldHeight, ballSizePx)
 
-            // TODO: Update the StateFlow with the initial position
-            // _ballPosition.value = Offset(ball!!.posX, ball!!.posY)
+            // Update the StateFlow with the initial position
+            ball?.let { b ->
+                _ballPosition.value = Offset(b.posX, b.posY)
+            }
         }
     }
 
     /**
      * Called by the SensorEventListener in the UI.
      */
-    fun onSensorDataChanged(event: SensorEvent) {
+    fun onSensorChanged(event: SensorEvent) {
         // Ensure ball is initialized
         val currentBall = ball ?: return
 
         if (event.sensor.type == Sensor.TYPE_GRAVITY) {
             if (lastTimestamp != 0L) {
-                // TODO: Calculate the time difference (dT) in seconds
+                // Calculate the time difference (dT) in seconds
                 // Hint: event.timestamp is in nanoseconds
-                // val NS2S = 1.0f / 1000000000.0f
-                // val dT = ...
+                val dT = (event.timestamp - lastTimestamp) / 1_000_000_000f
 
-                // TODO: Update the ball's position and velocity
+                // Access raw acceleration data
+                val rawX = event.values[0]
+                val rawY = event.values[1]
+                val rawZ = event.values[2]   // not used 
+                // Update the ball's position and velocity
                 // Hint: The sensor's x and y-axis are inverted
-                // currentBall.updatePositionAndVelocity(xAcc = ..., yAcc = ..., dT = ...)
+                val xAcc = -rawX
+                val yAcc = rawY  // double-invert is no-invert for Y
+                currentBall.updatePositionAndVelocity(xAcc, yAcc, dT)
+                // Check boundary conditions
+                currentBall.checkBoundaries()
 
-                // TODO: Update the StateFlow to notify the UI
-                // _ballPosition.update { Offset(currentBall.posX, currentBall.posY) }
+                // Update the StateFlow to notify the UI
+                _ballPosition.update { Offset(currentBall.posX, currentBall.posY) }
             }
-
-            // TODO: Update the lastTimestamp
-            // lastTimestamp = ...
+            // Update the lastTimestamp
+            lastTimestamp = event.timestamp
         }
     }
 
     fun reset() {
-        // TODO: Reset the ball's state
-        // ball?.reset()
+        // Reset the ball's state
+        ball?.reset()
 
-        // TODO: Update the StateFlow with the reset position
-        // ball?.let { ... }
+        // Update the StateFlow with the reset position
+        ball?.let { b ->
+             _ballPosition.update { Offset(b.posX, b.posY) }
+        }
 
-        // TODO: Reset the lastTimestamp
-        // lastTimestamp = 0L
+        // Reset the lastTimestamp
+        lastTimestamp = 0L
     }
 }
